@@ -1,4 +1,7 @@
 using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using Microsoft.Unity.VisualStudio.Editor;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -7,10 +10,10 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private int mazeWidth = 4;
     [SerializeField] private float mazeHeight = 4;
     [SerializeField] private GameObject roomPrefab;
-    private Stack<GameObject> callStack;
-    private Dictionary<Vector2Int, GameObject> cells;
-    private Dictionary<Vector2Int, GameObject> visited;
-    private Vector2Int currentPos;
+    private Stack<GameObject> callStack = new Stack<GameObject>();
+    private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
+    private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
+    [SerializeField] private Vector2Int currentPos = new Vector2Int(0,0);
 
     private void Awake()
     {
@@ -22,52 +25,63 @@ public class MazeGenerator : MonoBehaviour
                 room.name = $"Room_{i}_{j}";
                 room.transform.SetParent(GameObject.Find("Maze").transform);
                 room.GetComponent<Room>().SetPosition(new Vector2Int(i, j));
-                cells.Add(new Vector2Int(i, j), room);
+                cells[new Vector2Int(i, j)] = room.gameObject;
             }
         }
+
+        MoveThroughMaze();
     }
 
     private void MoveThroughMaze()
     {
-        if (currentPos.IsUnityNull())
-        {
-            currentPos = new Vector2Int(0, 0);
-        }
-
         List<GameObject> neighbors = new List<GameObject>();
 
         // East
-        if ((currentPos.x + 1) < mazeWidth && !visited[(new Vector2Int(currentPos.x + 1, currentPos.y))]) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        if ((currentPos.x + 1) < mazeWidth && TryGetVisitedGameObject(new Vector2Int(currentPos.x+1, currentPos.y)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
         {
             neighbors.Add(cells[new Vector2Int(currentPos.x + 1, currentPos.y)]);
         }
 
         // West
-        if ((currentPos.x - 1) < mazeWidth && !visited[(new Vector2Int(currentPos.x - 1, currentPos.y))]) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        if ((currentPos.x - 1) > 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x - 1, currentPos.y)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
         {
             neighbors.Add(cells[new Vector2Int(currentPos.x - 1, currentPos.y)]);
         }
 
         // North
-        if ((currentPos.y + 1) < mazeWidth && !visited[(new Vector2Int(currentPos.x, currentPos.y + 1))]) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        if ((currentPos.y + 1) < mazeHeight && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
         {
             neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
         }
 
         // South
-        if ((currentPos.y + 1) < mazeWidth && !visited[(new Vector2Int(currentPos.x, currentPos.y + 1))]) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        if ((currentPos.y - 1) > 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
         {
             neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
         }
 
-        int indexCount = 0;
-
-        foreach (var neighbor in neighbors)
+        if (neighbors.Count == 0)
         {
-            if (visited[neighbor.GetComponent<Room>().GetPosition()])
-            {
-                continue;
-            }
+            return;
         }
+        else if (neighbors.Count == 1)
+        {
+            callStack.Push(neighbors.ElementAt(0));
+        }
+        else
+        {
+            int randomValue = UnityEngine.Random.Range(0, neighbors.Count);
+            callStack.Push(neighbors.ElementAt(randomValue));
+            visited[currentPos] = cells[currentPos];
+        }
+    }
+
+    private GameObject TryGetVisitedGameObject(Vector2Int index)
+    {
+        if(visited.TryGetValue(index, out GameObject cell))
+        {
+            return cell;
+        }
+        return null;
     }
 }
