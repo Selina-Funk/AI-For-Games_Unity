@@ -18,6 +18,8 @@ public class Room : MonoBehaviour
 
     public Dictionary<Directions, GameObject> walls = new Dictionary<Directions, GameObject>();
 
+    private Vector2Int position;
+
     //public bool visited = false;
 
     //public Vector2Int position;
@@ -28,5 +30,15 @@ public class Room : MonoBehaviour
         walls[Directions.EAST] = eastWall;
         walls[Directions.SOUTH] = southWall;
         walls[Directions.WEST] = westWall;
+    }
+
+    public Vector2Int GetPosition()
+    {
+        return position;
+    }
+
+    public void SetPosition(Vector2Int pos)
+    {
+        position = pos;
     }
 }
