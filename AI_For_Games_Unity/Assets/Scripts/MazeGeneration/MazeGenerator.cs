@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
@@ -39,117 +41,106 @@ public class MazeGenerator : MonoBehaviour
 
         callStack.Push(cells[currentPos]);
 
-        MoveThroughMaze();
-    }
+        cells[currentPos].gameObject.GetComponent<SpriteRenderer>().color = Color.red;
 
-    private void Update()
-    {
-        foreach (var cell in callStack)
-        {
-            if (cell == callStack.Peek())
-            {
-                continue;
-            }
-            cell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.purple;
-        }
+        StartCoroutine(GoThroughMaze(0.0001f));
     }
 
     private void MoveThroughMaze()
     {
         GameObject current = callStack.Peek();
 
-        while (callStack.Count != 0)
+        current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+        currentPos = current.GetComponent<Room>().GetPosition();
+
+        List<GameObject> neighbors = new List<GameObject>();
+
+        // East
+        if ((currentPos.x + 1) < mazeWidth && TryGetVisitedGameObject(new Vector2Int(currentPos.x + 1, currentPos.y)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
         {
-            if (visited.ContainsKey(current.GetComponent<Room>().GetPosition()))
-            {
-                current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
-                callStack.Pop();
-            }
-            else
-            {
-                current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
-                currentPos = current.GetComponent<Room>().GetPosition();
-            }
-
-            List<GameObject> neighbors = new List<GameObject>();
-
-            // East
-            if ((currentPos.x + 1) < mazeWidth && TryGetVisitedGameObject(new Vector2Int(currentPos.x + 1, currentPos.y)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
-            {
-                neighbors.Add(cells[new Vector2Int(currentPos.x + 1, currentPos.y)]);
-            }
-
-            // West
-            if ((currentPos.x - 1) > 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x - 1, currentPos.y)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
-            {
-                neighbors.Add(cells[new Vector2Int(currentPos.x - 1, currentPos.y)]);
-            }
-
-            // North
-            if ((currentPos.y + 1) < mazeHeight && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
-            {
-                neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
-            }
-
-            // South
-            if ((currentPos.y - 1) > 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
-            {
-                neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
-            }
-
-            if (neighbors.Count == 0)
-            {
-                return;
-            }
-            else if (neighbors.Count == 1)
-            {
-                GameObject nextCell = neighbors[0];
-                callStack.Push(neighbors[0]);
-
-                if (nextCell.GetComponent<Room>().GetPosition().x - cells[currentPos].GetComponent<Room>().GetPosition().x == 1)
-                {
-                    cells[currentPos].GetComponent<Room>().ChangeWallActivation(Room.Directions.EAST, false);
-                }
-                else if (nextCell.GetComponent<Room>().GetPosition().x - cells[currentPos].GetComponent<Room>().GetPosition().x == 1)
-                {
-                    nextCell.GetComponent<Room>().ChangeWallActivation(Room.Directions.EAST, false);
-                }
-                else if (nextCell.GetComponent<Room>().GetPosition().y - cells[currentPos].GetComponent<Room>().GetPosition().y == 1)
-                {
-                    nextCell.GetComponent<Room>().ChangeWallActivation(Room.Directions.NORTH, false);
-                }
-                else if (nextCell.GetComponent<Room>().GetPosition().y - cells[currentPos].GetComponent<Room>().GetPosition().y == -1)
-                {
-                    cells[currentPos].GetComponent<Room>().ChangeWallActivation(Room.Directions.NORTH, false);
-                }
-            }
-            else
-            {
-                int randomValue = UnityEngine.Random.Range(0, neighbors.Count);
-                GameObject nextCell = neighbors[randomValue];
-                callStack.Push(nextCell);
-                visited[currentPos] = cells[currentPos];
-
-                if (nextCell.GetComponent<Room>().GetPosition().x - cells[currentPos].GetComponent<Room>().GetPosition().x == 1)
-                {
-                    cells[currentPos].GetComponent<Room>().ChangeWallActivation(Room.Directions.EAST, false);
-                }
-                else if (nextCell.GetComponent<Room>().GetPosition().x - cells[currentPos].GetComponent<Room>().GetPosition().x == 1)
-                {
-                    nextCell.GetComponent<Room>().ChangeWallActivation(Room.Directions.EAST, false);
-                }
-                else if (nextCell.GetComponent<Room>().GetPosition().y - cells[currentPos].GetComponent<Room>().GetPosition().y == 1)
-                {
-                    nextCell.GetComponent<Room>().ChangeWallActivation(Room.Directions.NORTH, false);
-                }
-                else if (nextCell.GetComponent<Room>().GetPosition().y - cells[currentPos].GetComponent<Room>().GetPosition().y == -1)
-                {
-                    cells[currentPos].GetComponent<Room>().ChangeWallActivation(Room.Directions.NORTH, false);
-                }
-            }
-
-            new WaitForSeconds(1.0f);
+            neighbors.Add(cells[new Vector2Int(currentPos.x + 1, currentPos.y)]);
         }
+
+        // West
+        if ((currentPos.x - 1) >= 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x - 1, currentPos.y)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        {
+            neighbors.Add(cells[new Vector2Int(currentPos.x - 1, currentPos.y)]);
+        }
+
+        // North
+        if ((currentPos.y + 1) < mazeHeight && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        {
+            neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
+        }
+
+        // South
+        if ((currentPos.y - 1) >= 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y - 1)) == null) // GET RID OF VISITED STUFF, IT IS FOR LATER
+        {
+            neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y - 1)]);
+        }
+
+        if (neighbors.Count == 0)
+        {
+            GameObject obj = callStack.Pop();
+            obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
+            visited[currentPos] = cells[currentPos];
+            return;
+        }
+        else if (neighbors.Count == 1)
+        {
+            GameObject nextCell = neighbors[0];
+            callStack.Push(neighbors[0]);
+            visited[currentPos] = cells[currentPos];
+
+            RemoveWall(nextCell, current);
+
+            current.GetComponent<SpriteRenderer>().color = Color.purple;
+            nextCell.GetComponent<SpriteRenderer>().color = Color.red;
+        }
+        else
+        {
+            int randomValue = UnityEngine.Random.Range(0, neighbors.Count);
+            GameObject nextCell = neighbors[randomValue];
+            callStack.Push(nextCell);
+            visited[currentPos] = cells[currentPos];
+
+            RemoveWall(nextCell, current);
+
+            current.GetComponent<SpriteRenderer>().color = Color.purple;
+            nextCell.GetComponent<SpriteRenderer>().color = Color.red;
+        }
+    }
+
+    private void RemoveWall(GameObject nextCell, GameObject current)
+    {
+        if (nextCell.GetComponent<Room>().GetPosition().x - current.GetComponent<Room>().GetPosition().x == 1)
+        {
+            current.GetComponent<Room>().ChangeWallActivation(Room.Directions.EAST, false);
+        }
+        else if (nextCell.GetComponent<Room>().GetPosition().x - current.GetComponent<Room>().GetPosition().x == -1)
+        {
+            nextCell.GetComponent<Room>().ChangeWallActivation(Room.Directions.EAST, false);
+        }
+        else if (nextCell.GetComponent<Room>().GetPosition().y - current.GetComponent<Room>().GetPosition().y == 1)
+        {
+            nextCell.GetComponent<Room>().ChangeWallActivation(Room.Directions.NORTH, false);
+        }
+        else if (nextCell.GetComponent<Room>().GetPosition().y - current.GetComponent<Room>().GetPosition().y == -1)
+        {
+            current.GetComponent<Room>().ChangeWallActivation(Room.Directions.NORTH, false);
+        }
+    }
+
+    private IEnumerator GoThroughMaze(float duration)
+    {
+        MoveThroughMaze();
+
+        if (callStack.Count > 0)
+        {
+            yield return new WaitForSeconds(duration);
+            StartCoroutine(GoThroughMaze(duration));
+        }
+        yield return null;
     }
 
     private GameObject TryGetVisitedGameObject(Vector2Int index)

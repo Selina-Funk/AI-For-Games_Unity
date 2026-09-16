@@ -400,9 +400,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bd472b683b72cbf49ac64b4cfb06cb90, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MazeGenerator
-  mazeWidth: 4
-  mazeHeight: 4
+  mazeWidth: 100
+  mazeHeight: 100
   roomPrefab: {fileID: 5151976372252199538, guid: 27245adc788398246897a9ec5a0e2d17, type: 3}
+  currentPos: {x: 0, y: 0}
 --- !u!4 &1926939017
 Transform:
   m_ObjectHideFlags: 0
