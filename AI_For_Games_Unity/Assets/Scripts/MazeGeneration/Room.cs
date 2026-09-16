@@ -24,7 +24,7 @@ public class Room : MonoBehaviour
 
     //public Vector2Int position;
 
-    private void Start()
+    private void Awake()
     {
         walls[Directions.NORTH] = northWall;
         walls[Directions.EAST] = eastWall;
@@ -40,5 +40,10 @@ public class Room : MonoBehaviour
     public void SetPosition(Vector2Int pos)
     {
         position = pos;
+    }
+
+    public void ChangeWallActivation(Directions direction, bool truthValue)
+    {
+        walls[direction].gameObject.SetActive(truthValue);
     }
 }
