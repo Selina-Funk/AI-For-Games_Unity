@@ -46,4 +46,9 @@ public class Room : MonoBehaviour
     {
         walls[direction].gameObject.SetActive(truthValue);
     }
+
+    public GameObject GetWallByDir(Directions dir)
+    {
+        return walls[dir];
+    }
 }
