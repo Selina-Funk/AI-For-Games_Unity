@@ -16,6 +16,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Vector2Int currentPos = new Vector2Int(0, 0);
     private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
+    private Dictionary<GameObject, GameObject> frontier = new Dictionary<GameObject, GameObject>();
 
     [Header("Recursive Backtracking")]
     private Stack<GameObject> callStack = new Stack<GameObject>();
@@ -24,9 +25,8 @@ public class MazeGenerator : MonoBehaviour
     private List<GameObject> randomPrimList = new List<GameObject>();
 
     [Header("Hunt and Kill")]
-    private GameObject startRoom;
     Vector2Int startPos;
-    private bool noNeibhors = true;
+    private bool noNeibhors = false;
 
     private void Awake()
     {
@@ -50,10 +50,11 @@ public class MazeGenerator : MonoBehaviour
             }
         }
         startPos = currentPos;
-        startRoom = cells[startPos];
+        cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
 
         //StartCoroutine(RecursiveBacktracking(0.2f));
         //StartCoroutine(RandomPrimMaze(0.2f));
+        StartCoroutine(HuntAndKillMaze(0.2f));
     }
 
     private void Update()
@@ -204,16 +205,10 @@ public class MazeGenerator : MonoBehaviour
 
     public void HuntAndKill()
     {
-        
         GameObject current = cells[currentPos];
         current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
 
         List<GameObject> neighbors = new List<GameObject>();
-
-        if (noNeibhors)
-        {
-            startPos = currentPos;
-        }
 
         // East
         if ((currentPos.x + 1) < mazeWidth && TryGetVisitedGameObject(new Vector2Int(currentPos.x + 1, currentPos.y)) == null)
@@ -243,31 +238,42 @@ public class MazeGenerator : MonoBehaviour
             neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y - 1)]);
         }
 
+        if (noNeibhors)
+        {
+            cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
+            if (startPos.x + 1 < mazeWidth)
+            {
+                startPos = new Vector2Int(startPos.x + 1, startPos.y);
+            }
+            else if (startPos.y + 1 < mazeHeight)
+            {
+                startPos = new Vector2Int(0, startPos.y + 1);
+            }
+            currentPos = startPos;
+        }
+        else
+        {
+            visited[currentPos] = cells[currentPos];
+        }
+
         if (neighbors.Count == 0)
         {
+            cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
             noNeibhors = true;
             currentPos = startPos;
-            if((currentPos.x+1) < mazeWidth)
-            {
-                GameObject nextCell = cells[new Vector2Int(currentPos.x + 1, currentPos.y)];
-                RemoveWall(nextCell, cells[currentPos]);
-                currentPos = new Vector2Int(currentPos.x + 1, currentPos.y);
-                cells[currentPos].GetComponent<SpriteRenderer>().color = Color.green;
-            }
-            else if ((currentPos.y + 1) < mazeHeight)
-            {
-                GameObject nextCell = cells[new Vector2Int(currentPos.x, currentPos.y + 1)];
-                RemoveWall(nextCell, cells[currentPos]);
-                currentPos = new Vector2Int(0, currentPos.y + 1);
-                cells[currentPos].GetComponent<SpriteRenderer>().color = Color.green;
-            }
+            cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+
         }
         else if (neighbors.Count == 1)
         {
             GameObject nextCell = neighbors[0];
             visited[currentPos] = cells[currentPos];
 
-            RemoveWall(nextCell, current);
+            if (TryGetVisitedGameObject(nextCell.GetComponent<Room>().GetPosition()) == null)
+            {
+                RemoveWall(nextCell, cells[currentPos]);
+            }
+
             currentPos = nextCell.GetComponent<Room>().GetPosition();
             current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
             nextCell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
@@ -277,8 +283,10 @@ public class MazeGenerator : MonoBehaviour
             int randomCell = UnityEngine.Random.Range(0, neighbors.Count);
             GameObject nextCell = neighbors[randomCell];
             visited[currentPos] = cells[currentPos];
-
-            RemoveWall(nextCell, current);
+            if (TryGetVisitedGameObject(nextCell.GetComponent<Room>().GetPosition()) == null)
+            {
+                RemoveWall(nextCell, cells[currentPos]);
+            }
             currentPos = nextCell.GetComponent<Room>().GetPosition();
             current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
             nextCell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
@@ -328,6 +336,17 @@ public class MazeGenerator : MonoBehaviour
         }
 
         yield return null;
+    }
+
+    private IEnumerator HuntAndKillMaze(float duration)
+    {
+        HuntAndKill();
+
+        if (true)
+        {
+            yield return new WaitForSeconds(duration);
+            StartCoroutine(HuntAndKillMaze(duration));
+        }
     }
 
     private GameObject TryGetVisitedGameObject(Vector2Int index)
