@@ -9,15 +9,24 @@ using UnityEngine;
 
 public class MazeGenerator : MonoBehaviour
 {
+    [Header("General Maze Info")]
     [SerializeField] private int mazeWidth = 4;
     [SerializeField] private int mazeHeight = 4;
     [SerializeField] private GameObject roomPrefab;
-    private Stack<GameObject> callStack = new Stack<GameObject>();
+    [SerializeField] private Vector2Int currentPos = new Vector2Int(0, 0);
     private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
-    [SerializeField] private Vector2Int currentPos = new Vector2Int(0,0);
 
+    [Header("Recursive Backtracking")]
+    private Stack<GameObject> callStack = new Stack<GameObject>();
+
+    [Header("Random Prim")]
     private List<GameObject> randomPrimList = new List<GameObject>();
+
+    [Header("Hunt and Kill")]
+    private GameObject startRoom;
+    Vector2Int startPos;
+    private bool noNeibhors = true;
 
     private void Awake()
     {
@@ -40,12 +49,22 @@ public class MazeGenerator : MonoBehaviour
                 cells[new Vector2Int(i, j)] = room.gameObject;
             }
         }
+        startPos = currentPos;
+        startRoom = cells[startPos];
 
-        StartCoroutine(GoThroughMaze(0.3f));
-        //StartCoroutine(RandomPrimMaze(0.5f));
+        //StartCoroutine(RecursiveBacktracking(0.2f));
+        //StartCoroutine(RandomPrimMaze(0.2f));
     }
 
-    private void MoveThroughMaze()
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.P))
+        {
+            HuntAndKill();
+        }
+    }
+
+    private void RecursiveBacktracking()
     {
         if (callStack.Count <= 0)
         {
@@ -183,6 +202,89 @@ public class MazeGenerator : MonoBehaviour
         randomPrimList.Remove(cells[currentPos]);
     }
 
+    public void HuntAndKill()
+    {
+        
+        GameObject current = cells[currentPos];
+        current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+
+        List<GameObject> neighbors = new List<GameObject>();
+
+        if (noNeibhors)
+        {
+            startPos = currentPos;
+        }
+
+        // East
+        if ((currentPos.x + 1) < mazeWidth && TryGetVisitedGameObject(new Vector2Int(currentPos.x + 1, currentPos.y)) == null)
+        {
+            noNeibhors = false;
+            neighbors.Add(cells[new Vector2Int(currentPos.x + 1, currentPos.y)]);
+        }
+
+        // West
+        if ((currentPos.x - 1) >= 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x - 1, currentPos.y)) == null)
+        {
+            noNeibhors = false;
+            neighbors.Add(cells[new Vector2Int(currentPos.x - 1, currentPos.y)]);
+        }
+
+        // North
+        if ((currentPos.y + 1) < mazeHeight && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null)
+        {
+            noNeibhors = false;
+            neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
+        }
+
+        // South
+        if ((currentPos.y - 1) >= 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y - 1)) == null)
+        {
+            noNeibhors = false;
+            neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y - 1)]);
+        }
+
+        if (neighbors.Count == 0)
+        {
+            noNeibhors = true;
+            currentPos = startPos;
+            if((currentPos.x+1) < mazeWidth)
+            {
+                GameObject nextCell = cells[new Vector2Int(currentPos.x + 1, currentPos.y)];
+                RemoveWall(nextCell, cells[currentPos]);
+                currentPos = new Vector2Int(currentPos.x + 1, currentPos.y);
+                cells[currentPos].GetComponent<SpriteRenderer>().color = Color.green;
+            }
+            else if ((currentPos.y + 1) < mazeHeight)
+            {
+                GameObject nextCell = cells[new Vector2Int(currentPos.x, currentPos.y + 1)];
+                RemoveWall(nextCell, cells[currentPos]);
+                currentPos = new Vector2Int(0, currentPos.y + 1);
+                cells[currentPos].GetComponent<SpriteRenderer>().color = Color.green;
+            }
+        }
+        else if (neighbors.Count == 1)
+        {
+            GameObject nextCell = neighbors[0];
+            visited[currentPos] = cells[currentPos];
+
+            RemoveWall(nextCell, current);
+            currentPos = nextCell.GetComponent<Room>().GetPosition();
+            current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
+            nextCell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+        }
+        else
+        {
+            int randomCell = UnityEngine.Random.Range(0, neighbors.Count);
+            GameObject nextCell = neighbors[randomCell];
+            visited[currentPos] = cells[currentPos];
+
+            RemoveWall(nextCell, current);
+            currentPos = nextCell.GetComponent<Room>().GetPosition();
+            current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
+            nextCell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+        }
+    }
+
     private void RemoveWall(GameObject nextCell, GameObject current)
     {
         if (nextCell.GetComponent<Room>().GetPosition().x - current.GetComponent<Room>().GetPosition().x == 1)
@@ -205,7 +307,7 @@ public class MazeGenerator : MonoBehaviour
 
     private IEnumerator GoThroughMaze(float duration)
     {
-        MoveThroughMaze();
+        RecursiveBacktracking();
 
         if (callStack.Count > 0)
         {
