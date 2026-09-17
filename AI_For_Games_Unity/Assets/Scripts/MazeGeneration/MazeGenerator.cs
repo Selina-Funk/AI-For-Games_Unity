@@ -16,8 +16,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Vector2Int currentPos = new Vector2Int(0, 0);
     private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
-    private Dictionary<GameObject, GameObject> frontier = new Dictionary<GameObject, GameObject>();
-
+    
     [Header("Recursive Backtracking")]
     private Stack<GameObject> callStack = new Stack<GameObject>();
 
@@ -27,6 +26,7 @@ public class MazeGenerator : MonoBehaviour
     [Header("Hunt and Kill")]
     Vector2Int startPos;
     private bool noNeibhors = false;
+    Queue<GameObject> frontier = new Queue<GameObject>();
 
     private void Awake()
     {
@@ -49,12 +49,15 @@ public class MazeGenerator : MonoBehaviour
                 cells[new Vector2Int(i, j)] = room.gameObject;
             }
         }
+
+        frontier.Enqueue(cells[currentPos]);
         startPos = currentPos;
         cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
 
-        //StartCoroutine(RecursiveBacktracking(0.2f));
+        DFSSetUp();
+        //StartCoroutine(RecursiveBacktrackMaze(0.2f));
         //StartCoroutine(RandomPrimMaze(0.2f));
-        StartCoroutine(HuntAndKillMaze(0.2f));
+        //StartCoroutine(HuntAndKillMaze(0.2f));
     }
 
     private void Update()
@@ -65,12 +68,18 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
+    private void DFSSetUp()
+    {
+        callStack.Push(cells[currentPos]);
+        
+
+        StartCoroutine(RecursiveBacktrackMaze(0.1f));
+    }
+
     private void RecursiveBacktracking()
     {
-        if (callStack.Count <= 0)
-        {
-            callStack.Push(cells[currentPos]);
-        }
+        visited[currentPos] = cells[currentPos];
+        cells[currentPos].GetComponent<Room>().SetVisited(true);
         GameObject current = callStack.Peek();
 
         current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
@@ -79,44 +88,44 @@ public class MazeGenerator : MonoBehaviour
         List<GameObject> neighbors = new List<GameObject>();
 
         // East
-        if ((currentPos.x + 1) < mazeWidth && TryGetVisitedGameObject(new Vector2Int(currentPos.x + 1, currentPos.y)) == null)
+        if (cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
         {
-            neighbors.Add(cells[new Vector2Int(currentPos.x + 1, currentPos.y)]);
+            if (!neighbor.GetComponent<Room>().GetVisited()) neighbors.Add(neighbor);
         }
 
         // West
-        if ((currentPos.x - 1) >= 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x - 1, currentPos.y)) == null)
+        if (cells.TryGetValue(new Vector2Int(currentPos.x - 1, currentPos.y), out GameObject neighborW))
         {
-            neighbors.Add(cells[new Vector2Int(currentPos.x - 1, currentPos.y)]);
+            if (!neighborW.GetComponent<Room>().GetVisited()) neighbors.Add(neighborW);
         }
 
         // North
-        if ((currentPos.y + 1) < mazeHeight && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y + 1)) == null)
+        if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y + 1), out GameObject neighborN))
         {
-            neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y + 1)]);
+            if (!neighborN.GetComponent<Room>().GetVisited()) neighbors.Add(neighborN);
         }
 
         // South
-        if ((currentPos.y - 1) >= 0 && TryGetVisitedGameObject(new Vector2Int(currentPos.x, currentPos.y - 1)) == null)
+        if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y - 1), out GameObject neighborS))
         {
-            neighbors.Add(cells[new Vector2Int(currentPos.x, currentPos.y - 1)]);
+            if (!neighborS.GetComponent<Room>().GetVisited()) neighbors.Add(neighborS);
         }
 
         if (neighbors.Count == 0)
         {
             GameObject obj = callStack.Pop();
             obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
-            obj = callStack.Peek();
-            obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
-            visited[currentPos] = cells[currentPos];
+            if (callStack.Count >0)
+            {
+                obj = callStack.Peek();
+                obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+            }
             return;
         }
         else if (neighbors.Count == 1)
         {
             GameObject nextCell = neighbors[0];
             callStack.Push(neighbors[0]);
-            visited[currentPos] = cells[currentPos];
-
             RemoveWall(nextCell, current);
 
             current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.purple;
@@ -127,8 +136,7 @@ public class MazeGenerator : MonoBehaviour
             int randomValue = UnityEngine.Random.Range(0, neighbors.Count);
             GameObject nextCell = neighbors[randomValue];
             callStack.Push(nextCell);
-            visited[currentPos] = cells[currentPos];
-
+            
             RemoveWall(nextCell, current);
 
             current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.purple;
@@ -244,16 +252,20 @@ public class MazeGenerator : MonoBehaviour
             if (startPos.x + 1 < mazeWidth)
             {
                 startPos = new Vector2Int(startPos.x + 1, startPos.y);
+                frontier.Enqueue(cells[startPos]);
             }
             else if (startPos.y + 1 < mazeHeight)
             {
                 startPos = new Vector2Int(0, startPos.y + 1);
+                frontier.Enqueue(cells[startPos]);
             }
             currentPos = startPos;
+            frontier.Dequeue();
         }
         else
         {
             visited[currentPos] = cells[currentPos];
+            cells[currentPos].GetComponent<Room>().SetVisited(true);
         }
 
         if (neighbors.Count == 0)
@@ -313,14 +325,14 @@ public class MazeGenerator : MonoBehaviour
         }
     }
 
-    private IEnumerator GoThroughMaze(float duration)
+    private IEnumerator RecursiveBacktrackMaze(float duration)
     {
         RecursiveBacktracking();
 
         if (callStack.Count > 0)
         {
             yield return new WaitForSeconds(duration);
-            StartCoroutine(GoThroughMaze(duration));
+            StartCoroutine(RecursiveBacktrackMaze(duration));
         }
         yield return null;
     }
@@ -342,7 +354,7 @@ public class MazeGenerator : MonoBehaviour
     {
         HuntAndKill();
 
-        if (true)
+        if (frontier.Count > 0)
         {
             yield return new WaitForSeconds(duration);
             StartCoroutine(HuntAndKillMaze(duration));

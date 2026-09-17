@@ -20,9 +20,7 @@ public class Room : MonoBehaviour
 
     private Vector2Int position;
 
-    //public bool visited = false;
-
-    //public Vector2Int position;
+    public bool visited = false;
 
     private void Awake()
     {
@@ -50,5 +48,15 @@ public class Room : MonoBehaviour
     public GameObject GetWallByDir(Directions dir)
     {
         return walls[dir];
+    }
+
+    public bool GetVisited()
+    {
+        return visited;
+    }
+
+    public void SetVisited(bool truthValue)
+    {
+        visited = truthValue;
     }
 }
