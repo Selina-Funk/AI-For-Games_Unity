@@ -6,6 +6,7 @@ using System.Security.Cryptography;
 using Microsoft.Unity.VisualStudio.Editor;
 using Unity.VisualScripting;
 using UnityEngine;
+using static UnityEngine.RuleTile.TilingRuleOutput;
 
 public class MazeGenerator : MonoBehaviour
 {
@@ -71,7 +72,6 @@ public class MazeGenerator : MonoBehaviour
     private void DFSSetUp()
     {
         callStack.Push(cells[currentPos]);
-        
 
         StartCoroutine(RecursiveBacktrackMaze(0.1f));
     }
@@ -87,29 +87,31 @@ public class MazeGenerator : MonoBehaviour
 
         List<GameObject> neighbors = new List<GameObject>();
 
+        GetNeighborCells(ref neighbors);
+
         // East
-        if (cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
-        {
-            if (!neighbor.GetComponent<Room>().GetVisited()) neighbors.Add(neighbor);
-        }
-
-        // West
-        if (cells.TryGetValue(new Vector2Int(currentPos.x - 1, currentPos.y), out GameObject neighborW))
-        {
-            if (!neighborW.GetComponent<Room>().GetVisited()) neighbors.Add(neighborW);
-        }
-
-        // North
-        if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y + 1), out GameObject neighborN))
-        {
-            if (!neighborN.GetComponent<Room>().GetVisited()) neighbors.Add(neighborN);
-        }
-
-        // South
-        if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y - 1), out GameObject neighborS))
-        {
-            if (!neighborS.GetComponent<Room>().GetVisited()) neighbors.Add(neighborS);
-        }
+        //if (!visited.ContainsKey(new Vector2Int(currentPos.x + 1, currentPos.y)))// cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
+        //{
+        //    if (!neighbor.GetComponent<Room>().GetVisited()) neighbors.Add(neighbor);
+        //}
+        //
+        //// West
+        //if (cells.TryGetValue(new Vector2Int(currentPos.x - 1, currentPos.y), out GameObject neighborW))
+        //{
+        //    if (!neighborW.GetComponent<Room>().GetVisited()) neighbors.Add(neighborW);
+        //}
+        //
+        //// North
+        //if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y + 1), out GameObject neighborN))
+        //{
+        //    if (!neighborN.GetComponent<Room>().GetVisited()) neighbors.Add(neighborN);
+        //}
+        //
+        //// South
+        //if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y - 1), out GameObject neighborS))
+        //{
+        //    if (!neighborS.GetComponent<Room>().GetVisited()) neighbors.Add(neighborS);
+        //}
 
         if (neighbors.Count == 0)
         {
@@ -302,6 +304,38 @@ public class MazeGenerator : MonoBehaviour
             currentPos = nextCell.GetComponent<Room>().GetPosition();
             current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
             nextCell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+        }
+    }
+
+    private void GetNeighborCells(ref List<GameObject> neighborhood)
+    {
+        Vector2Int east = new Vector2Int(currentPos.x + 1, currentPos.y);
+        Vector2Int west = new Vector2Int(currentPos.x - 1, currentPos.y);
+        Vector2Int north = new Vector2Int(currentPos.x, currentPos.y + 1);
+        Vector2Int south = new Vector2Int(currentPos.x, currentPos.y - 1);
+
+        // East
+        if (!visited.ContainsKey(east))
+        {
+            neighborhood.Add(cells[east]);
+        }
+
+        // West
+        if (!visited.ContainsKey(west))
+        {
+            neighborhood.Add(cells[west]);
+        }
+
+        // North
+        if (!visited.ContainsKey(north))
+        {
+            neighborhood.Add((cells[north]));
+        }
+
+        // South
+        if (!visited.ContainsKey(south))
+        {
+            neighborhood.Add(cells[(south)]);
         }
     }
 
