@@ -44,10 +44,6 @@ public class MazeGenerator : MonoBehaviour
         mazeAlgorithm = MazeType.DFS;
 
         InitMaze();
-
-        //DFSSetUp();
-        //StartCoroutine(RandomPrimMaze(0.2f));
-        //StartCoroutine(HuntAndKillMaze(0.2f));
     }
 
     public void InitMaze()
@@ -89,6 +85,7 @@ public class MazeGenerator : MonoBehaviour
     public void RemakeMaze()
     {
         frontier.Clear();
+        randomPrimList.Clear();
         foreach(var child in cells.Values)
         {
             Destroy(child.gameObject);
@@ -179,7 +176,6 @@ public class MazeGenerator : MonoBehaviour
 
     private void RandomPrim()
     {
-        
         if (randomPrimList.Count <= 0)
         {
             currentPos = new Vector2Int(mazeWidth / 2, mazeHeight / 2);
@@ -455,5 +451,10 @@ public class MazeGenerator : MonoBehaviour
     public Coroutine GetRunningAlgorithm()
     {
         return runningAlgorithm;
+    }
+
+    public Dictionary<Vector2Int, GameObject> GetVisited()
+    {
+        return visited;
     }
 }

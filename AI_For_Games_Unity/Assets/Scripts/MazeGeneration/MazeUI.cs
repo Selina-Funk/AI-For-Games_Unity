@@ -70,6 +70,7 @@ public class MazeUI : MonoBehaviour
         else
         {
             StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+            mazeGenerator.GetVisited().Clear();
             mazeGenerator.RemakeMaze();
             mazeGenerator.FireMaze();
         }
