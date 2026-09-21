@@ -17,6 +17,8 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Vector2Int currentPos = new Vector2Int(0, 0);
     private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
+
+    private MazeType mazeAlgorithm;
     
     [Header("Recursive Backtracking")]
     private Stack<GameObject> callStack = new Stack<GameObject>();
@@ -29,7 +31,25 @@ public class MazeGenerator : MonoBehaviour
     private bool noNeibhors = false;
     Queue<GameObject> frontier = new Queue<GameObject>();
 
+    public enum MazeType
+    {
+        DFS,
+        RANDOMPRIM,
+        HUNTANDKILL
+    }
+
     private void Awake()
+    {
+        mazeAlgorithm = MazeType.DFS;
+
+        InitMaze();
+
+        //DFSSetUp();
+        //StartCoroutine(RandomPrimMaze(0.2f));
+        //StartCoroutine(HuntAndKillMaze(0.2f));
+    }
+
+    public void InitMaze()
     {
         for (int i = 0; i < mazeWidth; i++)
         {
@@ -54,19 +74,16 @@ public class MazeGenerator : MonoBehaviour
         frontier.Enqueue(cells[currentPos]);
         startPos = currentPos;
         cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
-
-        DFSSetUp();
-        //StartCoroutine(RecursiveBacktrackMaze(0.2f));
-        //StartCoroutine(RandomPrimMaze(0.2f));
-        //StartCoroutine(HuntAndKillMaze(0.2f));
     }
 
-    private void Update()
+    public void RemakeMaze()
     {
-        if (Input.GetKeyDown(KeyCode.P))
+        foreach(var child in cells.Values)
         {
-            HuntAndKill();
+            Destroy(child.gameObject);
         }
+        cells = new Dictionary<Vector2Int, GameObject>();
+        InitMaze();
     }
 
     private void DFSSetUp()
@@ -87,31 +104,31 @@ public class MazeGenerator : MonoBehaviour
 
         List<GameObject> neighbors = new List<GameObject>();
 
-        GetNeighborCells(ref neighbors);
+        //GetNeighborCells(ref neighbors);
 
         // East
-        //if (!visited.ContainsKey(new Vector2Int(currentPos.x + 1, currentPos.y)))// cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
-        //{
-        //    if (!neighbor.GetComponent<Room>().GetVisited()) neighbors.Add(neighbor);
-        //}
-        //
-        //// West
-        //if (cells.TryGetValue(new Vector2Int(currentPos.x - 1, currentPos.y), out GameObject neighborW))
-        //{
-        //    if (!neighborW.GetComponent<Room>().GetVisited()) neighbors.Add(neighborW);
-        //}
-        //
-        //// North
-        //if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y + 1), out GameObject neighborN))
-        //{
-        //    if (!neighborN.GetComponent<Room>().GetVisited()) neighbors.Add(neighborN);
-        //}
-        //
-        //// South
-        //if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y - 1), out GameObject neighborS))
-        //{
-        //    if (!neighborS.GetComponent<Room>().GetVisited()) neighbors.Add(neighborS);
-        //}
+        if (/*!visited.ContainsKey(new Vector2Int(currentPos.x + 1, currentPos.y)))*/ cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
+        {
+            if (!neighbor.GetComponent<Room>().GetVisited()) neighbors.Add(neighbor);
+        }
+        
+        // West
+        if (cells.TryGetValue(new Vector2Int(currentPos.x - 1, currentPos.y), out GameObject neighborW))
+        {
+            if (!neighborW.GetComponent<Room>().GetVisited()) neighbors.Add(neighborW);
+        }
+        
+        // North
+        if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y + 1), out GameObject neighborN))
+        {
+            if (!neighborN.GetComponent<Room>().GetVisited()) neighbors.Add(neighborN);
+        }
+        
+        // South
+        if (cells.TryGetValue(new Vector2Int(currentPos.x, currentPos.y - 1), out GameObject neighborS))
+        {
+            if (!neighborS.GetComponent<Room>().GetVisited()) neighbors.Add(neighborS);
+        }
 
         if (neighbors.Count == 0)
         {
@@ -262,7 +279,8 @@ public class MazeGenerator : MonoBehaviour
                 frontier.Enqueue(cells[startPos]);
             }
             currentPos = startPos;
-            frontier.Dequeue();
+            GameObject obj = frontier.Dequeue();
+            obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
         }
         else
         {
@@ -304,6 +322,24 @@ public class MazeGenerator : MonoBehaviour
             currentPos = nextCell.GetComponent<Room>().GetPosition();
             current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
             nextCell.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+        }
+    }
+
+    public void FireMaze()
+    {
+        switch(mazeAlgorithm)
+        {
+            case MazeType.DFS:
+                DFSSetUp();
+                return;
+            case MazeType.RANDOMPRIM:
+                StartCoroutine(RandomPrimMaze(0.2f));
+                return;
+            case MazeType.HUNTANDKILL:
+                StartCoroutine(HuntAndKillMaze(0.2f));
+                return;
+            default:
+                return;
         }
     }
 
@@ -402,5 +438,35 @@ public class MazeGenerator : MonoBehaviour
             return cell;
         }
         return null;
+    }
+
+    public MazeType GetMazeAlgorithm()
+    {
+        return mazeAlgorithm;
+    }
+
+    public void SetMazeAlgorithm(MazeType type)
+    {
+        mazeAlgorithm = type;
+    }
+
+    public void SetMazeWidth(int newWidth)
+    {
+        mazeWidth = newWidth;
+    }
+
+    public int GetMazeWidth()
+    {
+        return mazeWidth;
+    }
+
+    public void SetMazeHeight(int newHeight)
+    {
+        mazeHeight = newHeight;
+    }
+
+    public int GetMazeHeight()
+    {
+        return mazeHeight;
     }
 }
