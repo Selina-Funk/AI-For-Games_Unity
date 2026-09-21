@@ -14,6 +14,9 @@ public class MazeUI : MonoBehaviour
 
     private MazeGenerator mazeGenerator;
 
+
+    private bool isRunning = false;
+
     private void Awake()
     {
         mazeGenerator = GameObject.Find("MazeGenerator").GetComponent<MazeGenerator>();
@@ -23,6 +26,8 @@ public class MazeUI : MonoBehaviour
 
     public void SetWidthNumber()
     {
+        if (mazeGenerator.GetRunningAlgorithm() != null) StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        isRunning = false;
         widthNumberText.text = widthSlider.value.ToString();
         mazeGenerator.SetMazeWidth((int)widthSlider.value);
 
@@ -31,6 +36,8 @@ public class MazeUI : MonoBehaviour
 
     public void SetHeightNumber()
     {
+        if (mazeGenerator.GetRunningAlgorithm() != null) StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        isRunning = false;
         heightNumberText.text = heightSlider.value.ToString();
         mazeGenerator.SetMazeHeight((int)heightSlider.value);
 
@@ -55,6 +62,16 @@ public class MazeUI : MonoBehaviour
 
     public void GenerateMaze()
     {
-        mazeGenerator.FireMaze();
+        if (!isRunning)
+        {
+            mazeGenerator.FireMaze();
+            isRunning = true;
+        }
+        else
+        {
+            StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+            mazeGenerator.RemakeMaze();
+            mazeGenerator.FireMaze();
+        }
     }
 }

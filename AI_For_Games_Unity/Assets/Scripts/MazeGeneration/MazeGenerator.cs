@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using Microsoft.Unity.VisualStudio.Editor;
 using Unity.VisualScripting;
+using UnityEditor.Rendering;
 using UnityEngine;
 using static UnityEngine.RuleTile.TilingRuleOutput;
 
@@ -17,8 +18,8 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private Vector2Int currentPos = new Vector2Int(0, 0);
     private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
-
     private MazeType mazeAlgorithm;
+    private Coroutine runningAlgorithm;
     
     [Header("Recursive Backtracking")]
     private Stack<GameObject> callStack = new Stack<GameObject>();
@@ -71,6 +72,15 @@ public class MazeGenerator : MonoBehaviour
             }
         }
 
+        Camera camera = Camera.main;
+        Room centerRoom = cells[new Vector2Int(mazeWidth / 2, mazeHeight / 2)].GetComponent<Room>();
+        camera.transform.position = new Vector3(centerRoom.GetPosition().x, -centerRoom.GetPosition().y, camera.transform.position.z);
+        
+        float AspectRation = (float)Screen.width / (float)Screen.height;
+        float horizontalSize = ((mazeWidth / AspectRation) / 2.0f) + 2;
+        float verticalSize = ((mazeHeight / AspectRation) / 2.0f) + 4;
+        camera.orthographicSize = Mathf.Max(horizontalSize, verticalSize) * 1.5f;
+
         frontier.Enqueue(cells[currentPos]);
         startPos = currentPos;
         cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
@@ -78,6 +88,7 @@ public class MazeGenerator : MonoBehaviour
 
     public void RemakeMaze()
     {
+        frontier.Clear();
         foreach(var child in cells.Values)
         {
             Destroy(child.gameObject);
@@ -88,9 +99,13 @@ public class MazeGenerator : MonoBehaviour
 
     private void DFSSetUp()
     {
+        currentPos = new Vector2Int(0, 0);
+        frontier.Enqueue(cells[currentPos]);
+        startPos = currentPos;
+        cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
         callStack.Push(cells[currentPos]);
 
-        StartCoroutine(RecursiveBacktrackMaze(0.1f));
+        runningAlgorithm = StartCoroutine(RecursiveBacktrackMaze(0.1f));
     }
 
     private void RecursiveBacktracking()
@@ -98,16 +113,15 @@ public class MazeGenerator : MonoBehaviour
         visited[currentPos] = cells[currentPos];
         cells[currentPos].GetComponent<Room>().SetVisited(true);
         GameObject current = callStack.Peek();
+        if (current == null) return;
 
         current.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
         currentPos = current.GetComponent<Room>().GetPosition();
 
         List<GameObject> neighbors = new List<GameObject>();
 
-        //GetNeighborCells(ref neighbors);
-
         // East
-        if (/*!visited.ContainsKey(new Vector2Int(currentPos.x + 1, currentPos.y)))*/ cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
+        if (cells.TryGetValue(new Vector2Int(currentPos.x + 1, currentPos.y), out GameObject neighbor))
         {
             if (!neighbor.GetComponent<Room>().GetVisited()) neighbors.Add(neighbor);
         }
@@ -134,10 +148,10 @@ public class MazeGenerator : MonoBehaviour
         {
             GameObject obj = callStack.Pop();
             obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.green;
-            if (callStack.Count >0)
+            if (callStack.Count > 0)
             {
                 obj = callStack.Peek();
-                obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
+                if (obj != null) obj.transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
             }
             return;
         }
@@ -333,45 +347,13 @@ public class MazeGenerator : MonoBehaviour
                 DFSSetUp();
                 return;
             case MazeType.RANDOMPRIM:
-                StartCoroutine(RandomPrimMaze(0.2f));
+                runningAlgorithm = StartCoroutine(RandomPrimMaze(0.2f));
                 return;
             case MazeType.HUNTANDKILL:
-                StartCoroutine(HuntAndKillMaze(0.2f));
+                runningAlgorithm = StartCoroutine(HuntAndKillMaze(0.2f));
                 return;
             default:
                 return;
-        }
-    }
-
-    private void GetNeighborCells(ref List<GameObject> neighborhood)
-    {
-        Vector2Int east = new Vector2Int(currentPos.x + 1, currentPos.y);
-        Vector2Int west = new Vector2Int(currentPos.x - 1, currentPos.y);
-        Vector2Int north = new Vector2Int(currentPos.x, currentPos.y + 1);
-        Vector2Int south = new Vector2Int(currentPos.x, currentPos.y - 1);
-
-        // East
-        if (!visited.ContainsKey(east))
-        {
-            neighborhood.Add(cells[east]);
-        }
-
-        // West
-        if (!visited.ContainsKey(west))
-        {
-            neighborhood.Add(cells[west]);
-        }
-
-        // North
-        if (!visited.ContainsKey(north))
-        {
-            neighborhood.Add((cells[north]));
-        }
-
-        // South
-        if (!visited.ContainsKey(south))
-        {
-            neighborhood.Add(cells[(south)]);
         }
     }
 
@@ -468,5 +450,10 @@ public class MazeGenerator : MonoBehaviour
     public int GetMazeHeight()
     {
         return mazeHeight;
+    }
+
+    public Coroutine GetRunningAlgorithm()
+    {
+        return runningAlgorithm;
     }
 }
