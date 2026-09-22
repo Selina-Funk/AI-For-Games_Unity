@@ -67,12 +67,20 @@ public class MazeUI : MonoBehaviour
             mazeGenerator.FireMaze();
             isRunning = true;
         }
-        else
-        {
-            StopCoroutine(mazeGenerator.GetRunningAlgorithm());
-            mazeGenerator.GetVisited().Clear();
-            mazeGenerator.RemakeMaze();
-            mazeGenerator.FireMaze();
-        }
+        //else
+        //{
+        //    StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        //    mazeGenerator.GetVisited().Clear();
+        //    mazeGenerator.RemakeMaze();
+        //    mazeGenerator.FireMaze();
+        //}
+    }
+
+    public void ResetGeneration()
+    {
+        StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        mazeGenerator.GetVisited().Clear();
+        mazeGenerator.RemakeMaze();
+        mazeGenerator.FireMaze();
     }
 }
