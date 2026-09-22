@@ -16,6 +16,7 @@ public class MazeGenerator : MonoBehaviour
     [SerializeField] private int mazeHeight = 4;
     [SerializeField] private GameObject roomPrefab;
     [SerializeField] private Vector2Int currentPos = new Vector2Int(0, 0);
+    [SerializeField] private float timeStep = 0.2f;
     private Dictionary<Vector2Int, GameObject> cells = new Dictionary<Vector2Int, GameObject>();
     private Dictionary<Vector2Int, GameObject> visited = new Dictionary<Vector2Int, GameObject>();
     private MazeType mazeAlgorithm;
@@ -82,6 +83,12 @@ public class MazeGenerator : MonoBehaviour
         cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
     }
 
+    public void StopRunningMaze()
+    {
+        StopAllCoroutines();
+        currentPos = new Vector2Int(0, 0);
+    }
+
     public void RemakeMaze()
     {
         frontier.Clear();
@@ -102,7 +109,7 @@ public class MazeGenerator : MonoBehaviour
         cells[currentPos].transform.GetChild(0).GetComponent<SpriteRenderer>().color = Color.red;
         callStack.Push(cells[currentPos]);
 
-        runningAlgorithm = StartCoroutine(RecursiveBacktrackMaze(0.1f));
+        runningAlgorithm = StartCoroutine(RecursiveBacktrackMaze(timeStep));
     }
 
     private void RecursiveBacktracking()
@@ -343,10 +350,10 @@ public class MazeGenerator : MonoBehaviour
                 DFSSetUp();
                 return;
             case MazeType.RANDOMPRIM:
-                runningAlgorithm = StartCoroutine(RandomPrimMaze(0.2f));
+                runningAlgorithm = StartCoroutine(RandomPrimMaze(timeStep));
                 return;
             case MazeType.HUNTANDKILL:
-                runningAlgorithm = StartCoroutine(HuntAndKillMaze(0.2f));
+                runningAlgorithm = StartCoroutine(HuntAndKillMaze(timeStep));
                 return;
             default:
                 return;
@@ -380,7 +387,7 @@ public class MazeGenerator : MonoBehaviour
         if (callStack.Count > 0)
         {
             yield return new WaitForSeconds(duration);
-            StartCoroutine(RecursiveBacktrackMaze(duration));
+            StartCoroutine(RecursiveBacktrackMaze(timeStep));
         }
         yield return null;
     }
@@ -392,7 +399,7 @@ public class MazeGenerator : MonoBehaviour
         if (randomPrimList.Count > 0)
         {
             yield return new WaitForSeconds(duration);
-            StartCoroutine(RandomPrimMaze(duration));
+            StartCoroutine(RandomPrimMaze(timeStep));
         }
 
         yield return null;
@@ -405,7 +412,7 @@ public class MazeGenerator : MonoBehaviour
         if (frontier.Count > 0)
         {
             yield return new WaitForSeconds(duration);
-            StartCoroutine(HuntAndKillMaze(duration));
+            StartCoroutine(HuntAndKillMaze(timeStep));
         }
     }
 
@@ -441,6 +448,16 @@ public class MazeGenerator : MonoBehaviour
     public void SetMazeHeight(int newHeight)
     {
         mazeHeight = newHeight;
+    }
+
+    public void SetTimeStep(float newTimeStep)
+    {
+        timeStep = newTimeStep;
+    }
+
+    public float GetTimeStep()
+    {
+        return timeStep;
     }
 
     public int GetMazeHeight()

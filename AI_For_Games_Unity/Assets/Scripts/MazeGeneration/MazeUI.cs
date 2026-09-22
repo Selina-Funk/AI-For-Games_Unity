@@ -7,10 +7,12 @@ public class MazeUI : MonoBehaviour
 {
     [SerializeField] private Slider widthSlider;
     [SerializeField] private Slider heightSlider;
+    [SerializeField] private Slider timeStepSlider;
     [SerializeField] private TMP_Dropdown algorithmDropdown;
 
     [SerializeField] private TextMeshProUGUI widthNumberText;
     [SerializeField] private TextMeshProUGUI heightNumberText;
+    [SerializeField] private TextMeshProUGUI timeStepNumberText;
 
     private MazeGenerator mazeGenerator;
 
@@ -22,11 +24,12 @@ public class MazeUI : MonoBehaviour
         mazeGenerator = GameObject.Find("MazeGenerator").GetComponent<MazeGenerator>();
         widthNumberText.text = mazeGenerator.GetMazeWidth().ToString();
         heightNumberText.text = mazeGenerator.GetMazeHeight().ToString();
+        timeStepNumberText.text = mazeGenerator.GetTimeStep().ToString();
     }
 
     public void SetWidthNumber()
     {
-        if (mazeGenerator.GetRunningAlgorithm() != null) StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        if (mazeGenerator.GetRunningAlgorithm() != null) mazeGenerator.StopRunningMaze();
         isRunning = false;
         widthNumberText.text = widthSlider.value.ToString();
         mazeGenerator.SetMazeWidth((int)widthSlider.value);
@@ -36,12 +39,18 @@ public class MazeUI : MonoBehaviour
 
     public void SetHeightNumber()
     {
-        if (mazeGenerator.GetRunningAlgorithm() != null) StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        if (mazeGenerator.GetRunningAlgorithm() != null) mazeGenerator.StopRunningMaze();
         isRunning = false;
         heightNumberText.text = heightSlider.value.ToString();
         mazeGenerator.SetMazeHeight((int)heightSlider.value);
 
         mazeGenerator.RemakeMaze();
+    }
+
+    public void SetTimeStep()
+    {
+        mazeGenerator.SetTimeStep(timeStepSlider.value);
+        timeStepNumberText.text = timeStepSlider.value.ToString("F2");
     }
 
     public void ChangeMazeAlgo()
@@ -67,20 +76,14 @@ public class MazeUI : MonoBehaviour
             mazeGenerator.FireMaze();
             isRunning = true;
         }
-        //else
-        //{
-        //    StopCoroutine(mazeGenerator.GetRunningAlgorithm());
-        //    mazeGenerator.GetVisited().Clear();
-        //    mazeGenerator.RemakeMaze();
-        //    mazeGenerator.FireMaze();
-        //}
     }
 
     public void ResetGeneration()
     {
-        StopCoroutine(mazeGenerator.GetRunningAlgorithm());
+        mazeGenerator.StopRunningMaze();
         mazeGenerator.GetVisited().Clear();
         mazeGenerator.RemakeMaze();
-        mazeGenerator.FireMaze();
+        isRunning = false;
+        //mazeGenerator.FireMaze();
     }
 }
